@@ -1,10 +1,12 @@
 import pandas as pd
 import numpy as np
 import datetime
+import networkx as nx
 
-def load_bitcoin_data(filename):
+def load_bitcoin_edge_data(filename):
     """
-    Returns dataframe containing bitcoin data with default index and datetime field format
+    Returns dataframe containing bitcoin data with default index and datetime field format 
+    and fraud classification field based on negative rating.
     Input: 
         filename: csv file with gzip compression
     Output:
@@ -13,10 +15,28 @@ def load_bitcoin_data(filename):
     df = pd.read_csv(filename,  
                     compression='gzip', 
                     names=['rater','ratee','rating','date'],
-                    dtype={'rater': str, 'ratee': str, 'rating': int})
+                    dtype={'rater': int, 'ratee': int, 'rating': int})
     df['date'] = df['date'].apply(lambda d: datetime.datetime.fromtimestamp(d).strftime('%Y-%m-%d %H:%M:%S'))
     df['date'] = pd.to_datetime(df['date'])
+    df['fraud'] = np.where(df['rating'] < 0, 1, 0)
+    df['color'] = np.where(df['rating'] < 0, 'red', 'blue')
     return df
+
+def load_bitcoin_graph(bitcoin_df, date='2016-01-24'):
+    """
+    Returns a graph object containing bitcoin data in range
+    up to and including date. Edge attributes created for each
+    column in dataframe that is not a node (rater or ratee).
+    Input: 
+        bitcoin_df: dataframe containing bitcoin ratings as edges
+    Output:
+        grahp object
+    """
+    return nx.from_pandas_edgelist(bitcoin_df[bitcoin_df['date']<=date], 
+                                   source='rater',
+                                   target='ratee',
+                                   edge_attr=True,
+                                   create_using=nx.DiGraph())
 
 
 def user_stats(bitcoin_df, usertype="ratee"):
@@ -117,7 +137,6 @@ def user_activity_dataframe(bitcoin_df):
     # users_agg = users_agg.astype({'count':int, 'median':int, 'min':int, 'max':int})
 
     return users
-
 
 if __name__ == '__main__':
     pass
