@@ -4,8 +4,7 @@ import datetime
 import networkx as nx
 
 def load_bitcoin_edge_data(filename):
-    """
-    Returns dataframe containing bitcoin data with default index and datetime field format 
+    """ Returns dataframe containing bitcoin data with default index and datetime field format 
     and fraud classification field based on negative rating.
     Input: 
         filename: csv file with gzip compression
@@ -20,17 +19,27 @@ def load_bitcoin_edge_data(filename):
     df['date'] = pd.to_datetime(df['date'])
     df['fraud'] = np.where(df['rating'] < 0, 1, 0)
     df['color'] = np.where(df['rating'] < 0, 'red', 'blue')
+    conditions  = [np.absolute(df['rating']) >= 8, np.absolute(df['rating']) >= 4, np.absolute(df['rating']) >= 2]
+    choices     = [4, 3, 2]
+    df['penwidth'] = np.select(conditions, choices, default=1)
     return df
 
 def load_bitcoin_graph(bitcoin_df, date='2016-01-24'):
-    """
-    Returns a graph object containing bitcoin data in range
+    """ Returns a graph object containing bitcoin data in range
     up to and including date. Edge attributes created for each
     column in dataframe that is not a node (rater or ratee).
     Input: 
         bitcoin_df: dataframe containing bitcoin ratings as edges
     Output:
-        grahp object
+         graph: attributes defined in bitcoin_df
+                color of edges: 
+                    red=negative rating, 
+                    blue=positive rating
+                weight of edges: 
+                    1=rating of +/- [1], 
+                    2=rating of +/- [2,3],
+                    2=rating of +/- [4,5,6,7],
+                    4=rating of +/- [8,9,10],
     """
     return nx.from_pandas_edgelist(bitcoin_df[bitcoin_df['date']<=date], 
                                    source='rater',
@@ -40,9 +49,9 @@ def load_bitcoin_graph(bitcoin_df, date='2016-01-24'):
 
 
 def user_stats(bitcoin_df, usertype="ratee"):
-    """Returns Dataframe of user activity stats based on whether the user
-       is the rater or ratee. This dataframe is use in function
-       user_activity_dataframe() to generate overall user stats
+    """ Returns Dataframe of user activity stats based on whether the user
+    is the rater or ratee. This dataframe is use in function
+    user_activity_dataframe() to generate overall user stats
     Input:
         Dataframe of bitcoin marketplace ratings activity
     Output:
@@ -78,11 +87,11 @@ def user_stats(bitcoin_df, usertype="ratee"):
     return pd.concat([users_agg, users_dt, users_nr], axis=1, sort=False)
 
 def sequential_ratings_delay(bitcoin_df):
-    """Returns dataframe with user and their minimum 
-       delay (forward or backwards) between sequential
-       ratings. This function used for EDA purposes only
-       for identifying automated bot ratings. Will use a
-       velocity function for production.
+    """ Returns dataframe with user and their minimum 
+    delay (forward or backwards) between sequential
+    ratings. This function used for EDA purposes only
+    for identifying automated bot ratings. Will use a
+    velocity function for production.
     Input: 
         Dataframe of bitcoin marketplace ratings activity
     Output: 
