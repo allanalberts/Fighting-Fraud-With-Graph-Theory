@@ -4,14 +4,15 @@ plt.style.use('ggplot')
 
 import networkx as nx
 import nxpd
+import helpers as h
 
-def plot_timeline(df, title):
+def plot_timeline(bitcoin_df, title):
     """ Plots positive and negative user rating counts over time
     Inputs:
         df: dataframe containg fields rating and date
         title: plot title
     """
-    timeline = df.copy()
+    timeline = bitcoin_df.copy()
     timeline.set_index(pd.DatetimeIndex(timeline.date), inplace=True)
 
     fig, ax = plt.subplots(figsize=(15,4))
@@ -21,15 +22,7 @@ def plot_timeline(df, title):
     ax.set_title(title)
     plt.tight_layout()
 
-def user_graph(user, bitcoin_G):
-    """ Returns a graph of user's given and received ratings
-    Input:
-        user: int
-        bitcoin_G: graph containing user node
-    """
-    return nx.ego_graph(bitcoin_G, user, radius=1)
-
-def add_user_to_graph(existing_graph, new_user, bitcoin_g):
+def add_user_to_graph(existing_graph, new_user, bitcoin_df):
     """ Returns a new graph object that now also includes the user's
     given and received ratings.
     Input: 
@@ -37,4 +30,5 @@ def add_user_to_graph(existing_graph, new_user, bitcoin_g):
         new_user: int
         bitcoin_g: graph containing new user node
     """
-    return nx.compose(existing_graph, nx.ego_graph(bitcoin_g, new_user, radius=1))
+    # return nx.compose(existing_graph, nx.ego_graph(bitcoin_g, new_user, radius=1))
+    return nx.compose(existing_graph, user_graph(new_user, bitcoin_df))
