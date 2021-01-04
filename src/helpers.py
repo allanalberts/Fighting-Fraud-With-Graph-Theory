@@ -17,36 +17,51 @@ def load_bitcoin_edge_data(filename):
                     dtype={'rater': int, 'ratee': int, 'rating': int})
     df['date'] = df['date'].apply(lambda d: datetime.datetime.fromtimestamp(d).strftime('%Y-%m-%d %H:%M:%S'))
     df['date'] = pd.to_datetime(df['date'])
-    df['fraud'] = np.where(df['rating'] < 0, 1, 0)
+    df['class'] = np.where(df['rating'] < 0, 1, 0)
+    df['binomial_rating'] = np.where(df['rating'] < 0, -1, 1)
     df['color'] = np.where(df['rating'] < 0, 'red', 'blue')
     conditions  = [np.absolute(df['rating']) >= 8, np.absolute(df['rating']) >= 4, np.absolute(df['rating']) >= 2]
     choices     = [4, 3, 2]
     df['penwidth'] = np.select(conditions, choices, default=1)
     return df
 
-def load_bitcoin_graph(bitcoin_df, date='2016-01-24'):
-    """ Returns a graph object containing bitcoin data in range
-    up to and including date. Edge attributes created for each
-    column in dataframe that is not a node (rater or ratee).
+def build_graph(bitcoin_df, user_lst=[], rating_type='all', maxdate='2016-01-24'):
+    """ Returns a dataframe and graph object containing bitcoin data in range
+    up to and including date. Edge attributes created for each column in 
+    dataframe that is not a node (rater or ratee).
     Input: 
-        bitcoin_df: dataframe containing bitcoin ratings as edges
+        bitcoin_df:  dataframe containing bitcoin ratings as edges
+        user_lst:    list containing rater and ratee users to filter for 
+                     inclusion. If list is empty, then all users included.
+        rating_type: string. Include only positive ratings if 'pos', only
+                     negative ratings if 'neg', otherwise include all rating values
+        max_date:    date. Only include records occurring prior to this date
     Output:
-         graph: attributes defined in bitcoin_df
-                color of edges: 
-                    red=negative rating, 
-                    blue=positive rating
-                weight of edges: 
-                    1=rating of +/- [1], 
-                    2=rating of +/- [2,3],
-                    2=rating of +/- [4,5,6,7],
-                    4=rating of +/- [8,9,10],
+        dataframe
+        graph:      attributes defined in bitcoin_df
+                    color of edges: 
+                       red=negative rating, 
+                       blue=positive rating
+                    weight of edges: 
+                       1=rating of +/- [1], 
+                       2=rating of +/- [2,3],
+                       3=rating of +/- [4,5,6,7],
+                       4=rating of +/- [8,9,10],
     """
-    return nx.from_pandas_edgelist(bitcoin_df[bitcoin_df['date']<=date], 
-                                   source='rater',
-                                   target='ratee',
-                                   edge_attr=True,
-                                   create_using=nx.DiGraph())
-
+    df = bitcoin_df[bitcoin_df['date'] <= maxdate].sort_values(['date', 'rating'],ascending=[True,False])
+    if len(user_lst) > 0:
+        df = df[(df['ratee'].isin(user_lst)) | (df['rater'].isin(user_lst))]
+    if rating_type == 'pos':
+        df = df[df['rating']>0]
+    elif rating_type == 'neg':
+        df = df[df['rating']<0]
+        
+    g = nx.from_pandas_edgelist(df, 
+                                source='rater',
+                                target='ratee',
+                                edge_attr=True,
+                                create_using=nx.DiGraph())
+    return df, g
 
 def user_stats(bitcoin_df, usertype="ratee"):
     """ Returns Dataframe of user activity stats based on whether the user
