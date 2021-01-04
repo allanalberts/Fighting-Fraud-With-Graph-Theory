@@ -1,7 +1,7 @@
 /data
 .DS_Store
 src/__pycache__/
-src/.ipynb_checkpoints
-notebooks/.ipynb_checkpoints
+src/.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
 
 
