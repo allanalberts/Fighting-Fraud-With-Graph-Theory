@@ -23,6 +23,7 @@ def load_bitcoin_edge_data(filename):
     conditions  = [np.absolute(df['rating']) >= 8, np.absolute(df['rating']) >= 4, np.absolute(df['rating']) >= 2]
     choices     = [4, 3, 2]
     df['penwidth'] = np.select(conditions, choices, default=1)
+    df = df.sort_values('date')
     return df
 
 def build_graph(bitcoin_df, user_lst=[], rating_type='all', maxdate='2016-01-24'):
@@ -168,6 +169,9 @@ def user_activity_dataframe(bitcoin_df):
     users['Fraudster'] = users['MinRatingReceived'] < 0
     users['RatingsGivenRatio'] = users['RatingsGiven'] / users['RatingsReceived']
     users['BotActivity'] = users['min_ratings_delta'] == 0
+
+
+
 
     # set datatypes:
     # first need to deal with any null values in int columns
