@@ -75,10 +75,8 @@ def user_stats(bitcoin_df, usertype="ratee"):
     df = bitcoin_df.copy()
     if usertype == 'ratee':
         ratingstype = "Received"
-        neg_ratingstype = "Fraud"
     elif usertype == 'rater':
         ratingstype = "Given"
-        neg_ratingstype = "Victim"
     
     # aggregate ratee stats
     users_agg = df.groupby(usertype)['rating'].agg(['count','mean', 'median', 'min','max'])
@@ -97,9 +95,16 @@ def user_stats(bitcoin_df, usertype="ratee"):
     users_nr = df[df['rating'] < 0].groupby(usertype)['rating'].agg({'count'}).fillna(0)
     users_nr.rename_axis(index={usertype: 'user'}, inplace=True)
     users_nr['count'] = users_nr['count'].fillna(0)
-    users_nr.columns = [neg_ratingstype + 'Cnt']
+    users_nr.columns = ['Neg' + ratingstype + 'Cnt']
     
-    return pd.concat([users_agg, users_dt, users_nr], axis=1, sort=False)
+    # positive ratings
+    users_pr = df[df['rating'] > 0].groupby(usertype)['rating'].agg({'count'}).fillna(0)
+    users_pr.rename_axis(index={usertype: 'user'}, inplace=True)
+    users_pr['count'] = users_pr['count'].fillna(0)
+    users_pr.columns = ['Pos' + ratingstype + 'Cnt']
+
+    return pd.concat([users_agg, users_dt, users_nr, users_pr], axis=1, sort=False)
+
 
 def sequential_ratings_delay(bitcoin_df):
     """ Returns dataframe with user and their minimum 
@@ -143,6 +148,14 @@ def user_activity_dataframe(bitcoin_df):
     rater = user_stats(bitcoin_df, usertype="rater")
     rater_bot = sequential_ratings_delay(bitcoin_df)
     users = pd.concat([ratee, rater, rater_bot], axis=1, sort=False)
+    
+    # zero fill nan's
+    for ratingstype in ['Received', 'Given']:
+        cols = ['Ratings' + ratingstype, 'AvgRating' + ratingstype, 
+                'MedianRating' + ratingstype, 'MinRating' + ratingstype, 
+                'MaxRating' + ratingstype]
+        users[cols] = users[cols].fillna(0)
+    users[['NegReceivedCnt', 'PosReceivedCnt']] = users[['NegReceivedCnt', 'PosReceivedCnt']].fillna(0)
 
     # Time active 
     users['FirstActivity'] = users[['DateFirstRatingReceived', 'DateLastRatingReceived',
