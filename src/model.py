@@ -58,3 +58,34 @@ def feature_iteration(bitcoin_df):
         df.at[(i,'cluster_coef')] = cluster_coef
         df.at[(i,'num_cliques')] = num_cliques
     return df
+
+    # for bitcoin alpha - needs to be modified for bitcoin_otc
+def feature_creation_ato(bitcoin_df, user, rate_date):
+    df = bitcoin_df.copy()
+    user_data = df[(df['ratee']==user) & ((df['date'] < rate_date) | ((df['date']==rate_date) & (df['rating'] > 0)))]
+    if len(user_data) <= 1:
+        return 0, 0
+    else:
+        days_since_last_active = (rate_date - user_data.iloc[-2]['date']).days
+        if user_data.iloc[-2]['rating'] < 0:
+            successive_neg_rating = 1
+            if len(user_data) > 2:
+                if user_data.iloc[-3]['rating'] < 0:
+                    successive_neg_rating = 2
+                    if len(user_data) > 3:
+                        if user_data.iloc[-4]['rating'] < 0:
+                            successive_neg_rating = 3
+        else:
+            successive_neg_rating = 0
+    return days_since_last_active, successive_neg_rating
+
+ def feature_iteration_ato(bitcoin_df):
+    df = bitcoin_df.copy()
+    df = df[['rater', 'ratee','rating','date']]
+    for i, row in df.iterrows():
+        user = row['ratee']
+        rate_date = row['date']
+        days_since_last_active, successive_neg_rating = feature_creation_ato(df, user, rate_date)
+        df.at[(i,'days_since_last_active')] = days_since_last_active
+        df.at[(i,'successive_neg_rating')] = successive_neg_rating
+    return df   
