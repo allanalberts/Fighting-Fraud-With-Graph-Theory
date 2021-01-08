@@ -42,7 +42,7 @@ def feature_iteration(bitcoin_df):
     Output:
         Dataframe
     """
-     df = bitcoin_df.copy()
+    df = bitcoin_df.copy()
     for i, row in df.iterrows():
         user = row['ratee']
         rate_date = row['date']
@@ -79,7 +79,7 @@ def feature_creation_ato(bitcoin_df, user, rate_date):
             successive_neg_rating = 0
     return days_since_last_active, successive_neg_rating
 
- def feature_iteration_ato(bitcoin_df):
+def feature_iteration_ato(bitcoin_df):
     df = bitcoin_df.copy()
     df = df[['rater', 'ratee','rating','date']]
     for i, row in df.iterrows():
