@@ -143,7 +143,7 @@ def user_activity_dataframe(bitcoin_df):
     Input:
         bitcoind_df: dataframe of bitcoin marketplace data
     Output:
-        users: dataframe
+        Dataframe
     """
     ratee = user_stats(bitcoin_df, usertype="ratee")
     rater = user_stats(bitcoin_df, usertype="rater")
