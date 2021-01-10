@@ -82,7 +82,7 @@ def sequential_velocity(bitcoin_df, user, rate_date):
 
 def feature_iteration_sequential_velocity(bitcoin_df):
     df = bitcoin_df.copy()
-    df = df[['rater', 'ratee','rating','date']]
+    df = df[['rater', 'ratee','rating','date', 'class']]
     for i, row in df.iterrows():
         user = row['ratee']
         rate_date = row['date']
@@ -96,7 +96,7 @@ def date_velocity(bitcoin_df, user, rate_date, vel_parm, user_type):
     df = bitcoin_df.copy()
     from_date = str(pd.Timestamp(rate_date) - pd.offsets.Hour(vel_parm))
     vel_neg, vel_all = \
-    df[(df[user_type]==user) & (df['date'] <= rate_date) & (df['date'] > from_date)]['class'].agg(['sum', 'count'])
+    df[(df[user_type]==user) & (df['date'] < rate_date) & (df['date'] >= from_date)]['class'].agg(['sum', 'count'])
     vel_pos = vel_all - vel_neg
     A = np.array([vel_neg, vel_pos, vel_all])
     A[np.isnan(A)] = 0
