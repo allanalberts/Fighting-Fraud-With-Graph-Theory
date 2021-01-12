@@ -4,7 +4,7 @@ import networkx as nx
 
 import helpers as h
 
-def feature_creation(bitcoin_df, user, rate_date):
+def edge_features(marketplace, bitcoin_df, user, max_date):
     """ Returns array containing predictive features for 
     an individual bitcoin rating.
     Input: 
@@ -14,27 +14,105 @@ def feature_creation(bitcoin_df, user, rate_date):
     Output:
         array
     """
-    df = bitcoin_df.copy()
-    user_data_in = df[(df['ratee']==user) & ((df['date'] < rate_date) | ((df['date']==rate_date) & (df['rating'] > 0)))]
-    if len(user_data_in)==0:
-        return np.zeros(8)
-    num_ratings_received = len(user_data_in)
-    num_neg_received = user_data_in['class'].sum()
+    target_user = h.user_data(marketplace, 
+                            bitcoin_df, 
+                            user, 
+                            user_type='target',
+                            rating_type='all',
+                            max_date=max_date)
+    if len(target_user)==0:
+        return np.zeros(20)
+
+    days_since_first_rated = (max_date - target_user['date'].min()).days
+    user_all_activity  = h.user_data(marketplace, 
+                            bitcoin_df, 
+                            user, 
+                            user_type='all',
+                            rating_type='all',
+                            max_date=max_date)
+    days_active = (max_date - user_all_activity['date'].min()).days
+
+    # base features
+    num_ratings_received = len(target_user)
+    num_neg_received = target_user['class'].sum()
     num_pos_received = num_ratings_received - num_neg_received
-    neg_ratings_pct = num_neg_received / num_ratings_received
-    rating_sum = user_data_in['rating'].sum()
-    days_active = (rate_date - user_data_in['date'].min()).days
-    _, g = h.build_graph(df, maxdate=rate_date)
-    cluster_coef = nx.clustering(g, user)
-    g = g.to_undirected()
-    num_cliques = nx.number_of_cliques(g, user)
+    if num_ratings_received > 0:
+        neg_ratings_pct = num_neg_received / num_ratings_received
+    else:
+        neg_ratings_pct = 0
+    rating_received_sum = target_user['rating'].sum()
+    rating_received_avg = target_user['rating'].mean()
 
-    A = np.array([num_ratings_received, num_neg_received, num_pos_received, 
-                  neg_ratings_pct, rating_sum, days_active, cluster_coef, num_cliques])
-    A[np.isnan(A)] = 0
-    return A
+    # Sequential velocity feature
+    if len(target_user) <= 1:
+        days_since_last_rated = 0
+        successive_neg_rating = 0
+    else:
+        days_since_last_rated = (max_date - target_user.iloc[-2]['date']).days
+        if (target_user.iloc[-2]['rating'] < 0) & (len(target_user) > 1):
+            successive_neg_rating = 1
+            if len(target_user) > 2:
+                if target_user.iloc[-3]['rating'] < 0:
+                    successive_neg_rating = 2
+                    if len(target_user) > 3:
+                        if target_user.iloc[-4]['rating'] < 0:
+                            successive_neg_rating = 3
+        else:
+            successive_neg_rating = 0
 
-def feature_iteration(bitcoin_df):
+    # Graph Features
+    ego_triad_300 = 0
+    ego_triad_210 = 0
+    ego_triad_201 = 0
+    ego_triad_120 = 0
+    ego_triad_all = 0
+    ego_cluster_coef = 0
+    ego_degree = 0
+    ego_betweeness = 0
+    ego_closeness = 0
+    ego_num_cliques = 0
+    g = h.build_graph(marketplace, bitcoin_df, rating_type='pos', max_date=max_date)
+    if user in g: 
+        ego_g = nx.ego_graph(nx.reverse_view(g), user, radius=1)
+        if len(ego_g) > 2:
+            node_census = nx.triadic_census(ego_g)
+            ego_triad_300 = node_census['300']
+            ego_triad_210 = node_census['210']
+            ego_triad_201 = node_census['201']
+            ego_triad_120 = node_census['120U'] + node_census['120D'] + node_census['120C']
+            ego_triad_all = ego_triad_300 + ego_triad_210 + ego_triad_201 + ego_triad_120
+            ego_cluster_coef = nx.clustering(ego_g, user)
+            ego_degree = nx.degree(ego_g)[user]
+            ego_betweeness = nx.betweenness_centrality(ego_g)[user]
+            ego_closeness = nx.closeness_centrality(ego_g)[user]
+            ego_g = ego_g.to_undirected()
+            ego_num_cliques = nx.number_of_cliques(ego_g, user)
+
+    arr = np.array([num_ratings_received, 
+                    num_neg_received,
+                    num_pos_received,
+                    neg_ratings_pct,
+                    rating_received_sum,
+                    rating_received_avg,
+                    days_since_first_rated,
+                    days_since_last_rated,
+                    days_active,
+                    successive_neg_rating,
+                    ego_triad_300,
+                    ego_triad_210,
+                    ego_triad_201,
+                    ego_triad_120,
+                    ego_triad_all,
+                    ego_cluster_coef,
+                    ego_degree,
+                    ego_betweeness,
+                    ego_closeness,
+                    ego_num_cliques,
+                    ])
+    arr[np.isnan(arr)] = 0
+    return arr
+
+def iteration_feature_creation(marketplace, bitcoin_df):
     """ Returns datafame containing predictive features for 
     every bitcoin rating.
     Input: 
@@ -46,17 +124,27 @@ def feature_iteration(bitcoin_df):
     for i, row in df.iterrows():
         user = row['ratee']
         rate_date = row['date']
-        num_ratings_received, num_neg_received, num_pos_received, \
-        neg_ratings_pct, rating_sum, days_active, cluster_coef, \
-        num_cliques = feature_creation(df, user, rate_date)
-        df.at[(i,'num_ratings_received')] = num_ratings_received
-        df.at[(i,'num_neg_received')] = num_neg_received
-        df.at[(i,'num_pos_received')] = num_pos_received
-        df.at[(i,'neg_ratings_pct')] = neg_ratings_pct
-        df.at[(i,'rating_sum')] = rating_sum
-        df.at[(i,'days_active')] = days_active
-        df.at[(i,'cluster_coef')] = cluster_coef
-        df.at[(i,'num_cliques')] = num_cliques
+        arr = edge_features(marketplace, df, user, rate_date)
+        df.at[(i,'num_ratings_received')] = arr[0]
+        df.at[(i,'num_neg_received')] = arr[1]
+        df.at[(i,'num_pos_received')] = arr[2]
+        df.at[(i,'neg_ratings_pct')] = arr[3]
+        df.at[(i,'rating_received_sum')] = arr[4]
+        df.at[(i,'rating_received_avg')] = arr[5]
+        df.at[(i,'days_since_first_rated')] = arr[6]
+        df.at[(i,'days_since_last_rated')] = arr[7]
+        df.at[(i,'days_active')] = arr[8]
+        df.at[(i,'successive_neg_rating')] = arr[9]
+        df.at[(i,'ego_triad_300')] = arr[10]
+        df.at[(i,'ego_triad_210')] = arr[11]
+        df.at[(i,'ego_triad_201')] = arr[12]
+        df.at[(i,'ego_triad_120')] = arr[13]
+        df.at[(i,'ego_triad_all')] = arr[14]
+        df.at[(i,'ego_cluster_coef')] = arr[15]
+        df.at[(i,'ego_degree')] = arr[16]
+        df.at[(i,'ego_betweeness')] = arr[17]
+        df.at[(i,'ego_closeness')] = arr[18]
+        df.at[(i,'ego_num_cliques')] = arr[19]
     return df
 
     # for bitcoin alpha - needs to be modified for bitcoin_otc
