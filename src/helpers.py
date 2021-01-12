@@ -26,11 +26,38 @@ def load_bitcoin_edge_data(filename):
     df = df.sort_values('date')
     return df
 
-def build_graph(bitcoin_df, user_lst=[], rating_type='all', maxdate='2016-01-24'):
-    """ Returns a dataframe and graph object containing bitcoin data in range
-    up to and including date. Edge attributes created for each column in 
+def user_data(marketplace, bitcoin_df, user, user_type='target', rating_type='pos',max_date='2016-01-24'):
+    df = bitcoin_df.copy()
+    if marketplace == 'alpha':
+        df = df[(df['date'] < max_date) | ((df['date'] == max_date) & (df['rating'] > 0))]
+    elif marketplace == 'otc':
+        df = df[df['date'] < max_date]
+    df = df.sort_values(['date', 'rating'],ascending=[True,False])
+
+    if user_type == 'target':
+        df = df[df['ratee'] == user]
+    elif user_type == 'source':
+        df = df[df['rater'] == user]   
+    elif user_type =='all':   
+        df = df[(df['ratee'] == user) | (df['rater'] == user)]
+    else:
+        print("Invalid user type")
+    
+    if rating_type == 'pos':
+        df = df[df['rating']>0]
+    elif rating_type == 'neg':
+        df = df[df['rating']<0]
+    return df
+
+
+def build_graph(marketplace, bitcoin_df, user_lst=[], rating_type='all', max_date='2016-01-24'):
+    """ Returns a graph object containing bitcoin data in range up to and including 
+    date (pos ratings only). Edge attributes created for each column in 
     dataframe that is not a node (rater or ratee).
     Input: 
+        marketplace: string for differentiating alpha and otc marketplaces.
+                     Need because alpha records are timestamped by day rather than
+                     by hh:mm:ss. Inclusive of same day positve ratings.
         bitcoin_df:  dataframe containing bitcoin ratings as edges
         user_lst:    list containing rater and ratee users to filter for 
                      inclusion. If list is empty, then all users included.
@@ -38,7 +65,6 @@ def build_graph(bitcoin_df, user_lst=[], rating_type='all', maxdate='2016-01-24'
                      negative ratings if 'neg', otherwise include all rating values
         max_date:    date. Only include records occurring prior to this date
     Output:
-        dataframe
         graph:      attributes defined in bitcoin_df
                     color of edges: 
                        red=negative rating, 
@@ -49,7 +75,13 @@ def build_graph(bitcoin_df, user_lst=[], rating_type='all', maxdate='2016-01-24'
                        3=rating of +/- [4,5,6,7],
                        4=rating of +/- [8,9,10],
     """
-    df = bitcoin_df[bitcoin_df['date'] <= maxdate].sort_values(['date', 'rating'],ascending=[True,False])
+    df = bitcoin_df.copy()
+    if marketplace == 'alpha':
+        df = df[(df['date'] < max_date) | ((df['date'] == max_date) & (df['rating'] > 0))]
+    elif marketplace == 'otc':
+        df = df[df['date'] < max_date]
+    df = df.sort_values(['date', 'rating'],ascending=[True,False])
+
     if len(user_lst) > 0:
         df = df[(df['ratee'].isin(user_lst)) | (df['rater'].isin(user_lst))]
     if rating_type == 'pos':
@@ -62,7 +94,7 @@ def build_graph(bitcoin_df, user_lst=[], rating_type='all', maxdate='2016-01-24'
                                 target='ratee',
                                 edge_attr=True,
                                 create_using=nx.DiGraph())
-    return df, g
+    return g
 
 def user_stats(bitcoin_df, usertype="ratee"):
     """ Returns Dataframe of user activity stats based on whether the user
