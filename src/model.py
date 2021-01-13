@@ -171,3 +171,17 @@ def feature_iteration_date_velocity(bitcoin_df):
         df.at[(i,'vel_48_in_neg')] = vel_48_in_neg
     df.drop(['class'], axis=1)
     return df
+
+if __name__ == '__main__':
+    df_features_otc = iteration_feature_creation(marketplace='otc', bitcoin_df=otc_df)
+    df_features_otc.to_csv('../data/df_features_otc.csv', index=False)
+
+    df_otc_vd = feature_iteration_date_velocity(otc_df)
+    df_otc_vd.to_csv('../data/df_otc_vd.csv', index=False)
+
+    df_features_alpha = iteration_feature_creation(marketplace='alpha', bitcoin_df=alpha_df)
+    df_features_alpha.to_csv('../data/df_features_alpha2.csv', index=False)
+
+    df_alpha_vd = feature_iteration_date_velocity(alpha_df)
+    df_alpha_vd.to_csv('../data/df_alpha_vd.csv', index=False)
+
