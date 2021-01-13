@@ -30,7 +30,7 @@ def edge_features(marketplace, bitcoin_df, user, max_date):
                             user_type='all',
                             rating_type='all',
                             max_date=max_date)
-    days_active = (max_date - user_all_activity['date'].min()).days
+    days_active = (max_date - user_all_activity['date'].min()).daysad
 
     # base features
     num_ratings_received = len(target_user)
@@ -147,39 +147,6 @@ def iteration_feature_creation(marketplace, bitcoin_df):
         df.at[(i,'ego_num_cliques')] = arr[19]
     return df
 
-    # for bitcoin alpha - needs to be modified for bitcoin_otc
-def sequential_velocity(bitcoin_df, user, rate_date):
-    df = bitcoin_df.copy()
-    user_data = df[(df['ratee']==user) & ((df['date'] < rate_date) | ((df['date']==rate_date) & (df['rating'] > 0)))]
-    if len(user_data) <= 1:
-        return 0, 0, 0
-    else:
-        days_since_last_rated = (rate_date - user_data.iloc[-2]['date']).days
-        days_since_first_rated = (rate_date - user_data['date'].min()).days
-        if user_data.iloc[-2]['rating'] < 0:
-            successive_neg_rating = 1
-            if len(user_data) > 2:
-                if user_data.iloc[-3]['rating'] < 0:
-                    successive_neg_rating = 2
-                    if len(user_data) > 3:
-                        if user_data.iloc[-4]['rating'] < 0:
-                            successive_neg_rating = 3
-        else:
-            successive_neg_rating = 0
-    return days_since_last_rated, days_since_first_rated, successive_neg_rating
-
-def feature_iteration_sequential_velocity(bitcoin_df):
-    df = bitcoin_df.copy()
-    df = df[['rater', 'ratee','rating','date', 'class']]
-    for i, row in df.iterrows():
-        user = row['ratee']
-        rate_date = row['date']
-        days_since_last_rated,  days_since_first_rated, successive_neg_rating = sequential_velocity(df, user, rate_date)
-        df.at[(i,'days_since_last_rated')] = days_since_last_rated
-        df.at[(i,'days_since_first_rated')] = days_since_first_rated
-        df.at[(i,'successive_neg_rating')] = successive_neg_rating
-    return df   
-
 def date_velocity(bitcoin_df, user, rate_date, vel_parm, user_type):
     df = bitcoin_df.copy()
     from_date = str(pd.Timestamp(rate_date) - pd.offsets.Hour(vel_parm))
@@ -200,19 +167,7 @@ def feature_iteration_date_velocity(bitcoin_df):
         vel_24_out_neg, vel_24_out_pos, vel_24_out_all = date_velocity(df, user, rate_date, vel_parm=24, user_type="rater")
         vel_48_in_neg, vel_48_in_pos, vel_48_in_all = date_velocity(df, user, rate_date, vel_parm=48, user_type="ratee")
         vel_48_out_neg, vel_48_out_pos, vel_48_out_all = date_velocity(df, user, rate_date, vel_parm=48, user_type="rater")
-        df.at[(i,'vel_24_in_pos')] = vel_24_in_pos
         df.at[(i,'vel_24_in_neg')] = vel_24_in_neg
-        df.at[(i,'vel_24_in_all')] = vel_24_in_all
-        df.at[(i,'vel_24_out_pos')] = vel_24_out_pos
-        df.at[(i,'vel_24_out_neg')] = vel_24_out_neg
-        df.at[(i,'vel_24_out_all')] = vel_24_out_all
-        df.at[(i,'vel_24_all')] = vel_24_in_all + vel_24_out_all
-        df.at[(i,'vel_48_in_pos')] = vel_48_in_pos
         df.at[(i,'vel_48_in_neg')] = vel_48_in_neg
-        df.at[(i,'vel_48_in_all')] = vel_48_in_all
-        df.at[(i,'vel_48_out_pos')] = vel_48_out_pos
-        df.at[(i,'vel_48_out_neg')] = vel_48_out_neg
-        df.at[(i,'vel_48_out_all')] = vel_48_out_all
-        df.at[(i,'vel_48_all')] = vel_48_in_all + vel_48_out_all
     df.drop(['class'], axis=1)
     return df
