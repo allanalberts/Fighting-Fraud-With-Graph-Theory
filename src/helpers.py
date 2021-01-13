@@ -138,38 +138,6 @@ def user_stats(bitcoin_df, usertype="ratee"):
 
     return pd.concat([users_agg, users_dt, users_nr, users_pr], axis=1, sort=False)
 
-
-def sequential_ratings_delay(bitcoin_df):
-    """ Returns dataframe with user and their minimum 
-    delay (forward or backwards) between sequential
-    ratings. This function used for EDA purposes only
-    for identifying automated bot ratings. Will use a
-    velocity function for production.
-    Input: 
-        Dataframe of bitcoin marketplace ratings activity
-    Output: 
-        Dataframe
-    """
-    df = bitcoin_df.sort_values('date').copy()
-    datetime_index = pd.DatetimeIndex(df['date'])
-    df.set_index(datetime_index, inplace=True)
-    
-    df['previousdate'] = df.groupby('rater')['date'].shift(1)
-    df['nextdate'] = df.groupby('rater')['date'].shift(-1)
-    df['delta_previous'] = (df['date'] - df['previousdate']).astype('timedelta64[s]')
-    df['delta_next'] = (df['nextdate'] - df['date']).astype('timedelta64[s]')
-    df['delta'] = df[['delta_previous','delta_next']].min(axis=1)
-
-    df = df.groupby('rater')['delta'].agg(['min'])
-    df.columns = ['min_ratings_delta']
-    
-    # PLACEHOLDER FOR COUNT OF AUTOMATED ACTIVITY (NEED A DELAY THRESHOLD VALUE)
-    # do I want to build a velocity function (ratings within previous X minutes)
-    # 2 or more in one minute, 3 or more in 5 minutes.
-    # can color code the edge to signify bot activity
-    
-    return df
-
 def user_activity_dataframe(bitcoin_df):
     """Returns dataframe of metrics related to activity of each marketplace user
     Input:
@@ -179,8 +147,7 @@ def user_activity_dataframe(bitcoin_df):
     """
     ratee = user_stats(bitcoin_df, usertype="ratee")
     rater = user_stats(bitcoin_df, usertype="rater")
-    rater_bot = sequential_ratings_delay(bitcoin_df)
-    users = pd.concat([ratee, rater, rater_bot], axis=1, sort=False)
+    users = pd.concat([ratee, rater], axis=1, sort=False)
     
     # zero fill nan's
     for ratingstype in ['Received', 'Given']:
@@ -196,19 +163,9 @@ def user_activity_dataframe(bitcoin_df):
     users['LastActivity'] = users[['DateFirstRatingReceived', 'DateLastRatingReceived',
                                    'DateFirstRatingGiven', 'DateLastRatingGiven']].max(axis=1)
     users['TimeActive'] = users['LastActivity'] - users['FirstActivity']
-
     users['Victim'] = users['MinRatingGiven'] < 0
     users['Fraudster'] = users['MinRatingReceived'] < 0
     users['RatingsGivenRatio'] = users['RatingsGiven'] / users['RatingsReceived']
-    users['BotActivity'] = users['min_ratings_delta'] == 0
-
-
-
-
-    # set datatypes:
-    # first need to deal with any null values in int columns
-    # users_agg = users_agg.astype({'count':int, 'median':int, 'min':int, 'max':int})
-
     return users
 
 if __name__ == '__main__':
