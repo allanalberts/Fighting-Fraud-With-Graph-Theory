@@ -2,8 +2,11 @@
 Creating a trusted environment is essential for successful online marketplaces. Unfortunately, unscrupulous users will devise schemes to manipulate user ratings and thus, undermine this trust. My project's goal is to build a predictive model to identify users who are likely to create negative experiences for other marketplace users. 
 
 ### Bitcoin Trading Marketplaces
+The OTC Bitcoin Marketplace is a place where users can trade bitcoin for service or products or vice versa. For my project I focused on the Over The Counter Bitcoin Marketplace. 
+
 ![](/images/OTC_screenshot.png)
-The OTC Bitcoin Marketplace is a place where users can trade bitcoin for service or products or vice versa. Trust is established by having users rate each other based on the experience of their interactions. Ratings range from -10 for completely untrustworthy to +10 for very trusted. My project focuses on the first five years of operation of this marketplace which involves 5,881 users giving 35,588 ratings to each other, 10% of which were negative. 
+
+ Trust is established by having users rate each other based on the experience of their interactions. Ratings range from -10 for completely untrustworthy to +10 for very trusted. My project focuses on the first five years of operation of this marketplace which involves 5,881 users giving 35,588 ratings to each other, 10% of which were negative. 
 
 ![](/images/bitcoin_marketplace_hist.png)
 
