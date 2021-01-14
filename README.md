@@ -16,7 +16,12 @@ Someone trying to defraud a user needs to establish ratings credibility before a
 Not only is this fraud difficult to anticipate by the marketplace users, it is also difficult to identify by traditional fraud detection models. Models are usually based on features that measure the velocity and pattern of a user’s activity and learn which patterns are normal and which ones are likely fraudulent. However in this case, we need to look beyond the fraud user and see what is happening with people they have previously interacted with.
 
 ### Graph Theory Features
-To address this issue, I have engineered 10 predictive features based on graph theory. For each transaction, I used the history of positive ratings in the marketplace and generated a Reverse Directed Ego Subgraph of the users rating connections. The subgraph shows interactions between users that the main user has received positive ratings from. This subgraph is then used as the basis for generating predictive features associated with the user. These features consist of  counts of specific types of triads (301, 210, 201,120) and all triads, cluster coefficient, degree, closeness, betweenness, and number of cliques.  
+To address this issue, I have engineered 10 predictive features based on graph theory. For each transaction, I used the history of positive ratings in the marketplace and generated a Reverse Directed Ego Subgraph of the users rating connections. The subgraph shows interactions between users that the main user has received positive ratings from. This subgraph is then used as the basis for generating predictive features associated with the user, mostly around density metrics. These features consist of:
+- counts of triads, specificaly triads 301, 210, 201, and 120
+- measure of centrality, specifically high closeness and low betweeness to signify a denser network
+- cluster coefficient
+- number of degrees or users that where interacted with
+- number of cliques
 
 ### Other Features
 My model also uses 12 more traditional features associated with user activity including, negative retaings in previous 24 and 48 hours, number of successive negative ratings, days since last active, first active and last negative rating, number of positive and negative ratings, sum and average of ratings received and negative ratings percent.
@@ -24,7 +29,7 @@ My model also uses 12 more traditional features associated with user activity in
 < insert image of feature importance>
 
 ### The model:
-My fraud detection model utilizes these 22 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I tuned the model using 3 fold cross validation. First, in order to narrow down my hyperparameters values for tuning, I used a randomized cv search. Next I used a grid search with cross validation for final tuning. My model was able to successfully predict a negative rating 54% of the time with only 1% of legitimate users affected with a false positive prediction. For the fraud ratings scenario described above, I was able to sample the results and determine successful classification. 
+My fraud detection model utilizes these 22 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a gid of paramaeter range and randomly sample from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 2.64% increase in model performance. The accuracy score of 0.9437 was extemely close to the Out Of Bag score of 0.09462 thus suggesting model validity. My model was able to successfully predict a negative rating 54% of the time with only 1% of legitimate users affected with a false positive prediction. For the fraud ratings scenario described above, I was able to sample the results and determine successful classification. 
 
 <insert image of confusion matrix>
 <insert precision-recall curve>
