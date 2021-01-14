@@ -34,7 +34,8 @@ My model also uses 12 more traditional features associated with user activity in
 ### The model:
 My fraud detection model utilizes these 22 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a gid of paramaeter range and randomly sample from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 2.64% increase in model performance. The accuracy score of 0.9437 was extemely close to the Out Of Bag score of 0.09462 thus suggesting model validity. My model was able to successfully predict a negative rating 54% of the time with only 1% of legitimate users affected with a false positive prediction. For the fraud ratings scenario described above, I was able to sample the results and determine successful classification. 
 
-![](/images/confusion_matrix.png)
+<img src="/images/confusion_matrix.png" alt="drawing" width="200"/>
+
 ![](/images/PR_curve.png)
 
 ### Next Steps - Results Validation
