@@ -1,30 +1,30 @@
 # Impoving-Trust-in-Marketplace-User-Ratings
-This project utilizes graph theory and deep learning to identify fraud in P2P marketplace user ratings.
-
-
-The ability to trust other users is a key requirement for successful peer-to-peer (P2P) marketplaces. Trust is established through user ratings of interactions with other users. However, ratings can be manipulate by by sellers who use multiple accounts that they control to create fake positive ratings for themselves. This project combines graph theory with deep learing to identify manipulated user ratings.
+Creating a trusted environment is essential for successful online marketplaces. Unfortunetly, unscrupulous users will devise schemes to manipulate user ratings and thus, undermine this trust. My project's goal is to build a predictive model to identify users who are likely to create negative experiences for other marketplace users. I will do this by engineering relevant features using graph theory and timeseries velocity metrics.
 
 ### Bitcoin Trading Marketplaces
-Bit coin P2P markplaces are particularly suseptable to fraud involving manipulated user ratings. (talk about why this is) 
+Bit coin peer-to-peer (P2P) markplaces are particularly suseptable to fraud given the anomanity related to bit coins. The OTC Bitcoin Marketplace is a place where users can trade bitcoin for service or products or vice versa. Trust is established by having users rate each other based on the experience of their interactions. Ratings range from -10 for completely untrustworthy to +10 for very trusted. However, while this system my seem helpful, it can be manipulated by fraudsters and undermine the marketplace brand. 
+
+### The OTC Bitcoin Marketplace
+involving manipulated user ratings. (talk about why this is) 
 - explain the marketplaces and show timeline overview of ratings activity
 
-### Idendifying Malicious Bot Activity
-Fraudsters often use malicious bots or automated programs to perform their dirty work. Use of these programs usually manifests itself as a data anomaly amongst human activity. In the case of ratings, the bot activity appears as high frequency ratings in short bursts. The first step in countering frauding threats is to identify and remove ratings that are generated automatically. 
-- go into anomalous detection of automated programs. 
-- show eda graph of bot activity
+
 
 ### Identifying Ratings Boosted through User Colusion
 - explain how fraud occurs
 - show eda example visualization of fraud
 
-### Engineering Features to identify User Colusion
-- go into how node2vec works
+### Feature Engineering with Graph Theory for collusion identification
+### Feature engineering for velocity metrics
+### Features base on aggregate user ratings
 
-### Testing Strategy
-### Predict ratings fraud using Neural Net
-### Create scoring system based on predictions
-### Review predition outcomes vs use of avg ratings
+### Model Tuning
+
+### Model Results
+compare to no system
 - confusion matrics
-- roc plot
+- precision-recall curve
+### Next Steps
+- help user understand reasons for potential negative rating predictions - use feature analysis and shap
 
 
