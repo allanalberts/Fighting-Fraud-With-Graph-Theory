@@ -1,30 +1,34 @@
 # Impoving-Trust-in-Marketplace-User-Ratings
-Creating a trusted environment is essential for successful online marketplaces. Unfortunetly, unscrupulous users will devise schemes to manipulate user ratings and thus, undermine this trust. My project's goal is to build a predictive model to identify users who are likely to create negative experiences for other marketplace users. I will do this by engineering relevant features using graph theory and timeseries velocity metrics.
+Creating a trusted environment is essential for successful online marketplaces. Unfortunately, unscrupulous users will devise schemes to manipulate user ratings and thus, undermine this trust. My project's goal is to build a predictive model to identify users who are likely to create negative experiences for other marketplace users. 
 
 ### Bitcoin Trading Marketplaces
-Bit coin peer-to-peer (P2P) markplaces are particularly suseptable to fraud given the anomanity related to bit coins. The OTC Bitcoin Marketplace is a place where users can trade bitcoin for service or products or vice versa. Trust is established by having users rate each other based on the experience of their interactions. Ratings range from -10 for completely untrustworthy to +10 for very trusted. However, while this system my seem helpful, it can be manipulated by fraudsters and undermine the marketplace brand. 
+The OTC Bitcoin Marketplace is a place where users can trade bitcoin for service or products or vice versa. Trust is established by having users rate each other based on the experience of their interactions. Ratings range from -10 for completely untrustworthy to +10 for very trusted. My project focuses on the first five years of operation of this marketplace which involves 5,881 users giving 35,588 ratings to each other, 10% of which were negative. 
 
-### The OTC Bitcoin Marketplace
-involving manipulated user ratings. (talk about why this is) 
-- explain the marketplaces and show timeline overview of ratings activity
+< insert screen shot of marketplace>
+<insert image of marketplace timeline>
 
+### The Fraud Ratings Manipulation Scheme
+Someone trying to defraud a user needs to establish ratings credibility before anyone is likely to engage with them in a transaction of any significant value. They can work to obtain a higher rating by engaging in legitimate transactions, but this takes time and fraudsters are usually not very patient.  Alternatively, they can create a bunch of fake users and then have all of these users rate each other positively. Once the users have a good rating, they go out and find an unsuspecting legitimate user to defraud.
 
+<insert images of fraud scenario>
 
-### Identifying Ratings Boosted through User Colusion
-- explain how fraud occurs
-- show eda example visualization of fraud
+### Fraud Detection Models
+Not only is this fraud difficult to anticipate by the marketplace users, it is also difficult to identify by traditional fraud detection models. Models are usually based on features that measure the velocity and pattern of a user’s activity and learn which patterns are normal and which ones are likely fraudulent. However in this case, we need to look beyond the fraud user and see what is happening with people they have previously interacted with.
 
-### Feature Engineering with Graph Theory for collusion identification
-### Feature engineering for velocity metrics
-### Features base on aggregate user ratings
+### Graph Theory Features
+To address this issue, I have engineered 10 predictive features based on graph theory. For each transaction, I used the history of positive ratings in the marketplace and generated a Reverse Directed Ego Subgraph of the users rating connections. The subgraph shows interactions between users that the main user has received positive ratings from. This subgraph is then used as the basis for generating predictive features associated with the user. These features consist of  counts of specific types of triads (301, 210, 201,120) and all triads, cluster coefficient, degree, closeness, betweenness, and number of cliques.  
 
-### Model Tuning
+### Other Features
+My model also uses 12 more traditional features associated with user activity including, negative retaings in previous 24 and 48 hours, number of successive negative ratings, days since last active, first active and last negative rating, number of positive and negative ratings, sum and average of ratings received and negative ratings percent.
 
-### Model Results
-compare to no system
-- confusion matrics
-- precision-recall curve
-### Next Steps
-- help user understand reasons for potential negative rating predictions - use feature analysis and shap
+< insert image of feature importance>
 
+### The model:
+My fraud detection model utilizes these 22 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I tuned the model using 3 fold cross validation. First, in order to narrow down my hyperparameters values for tuning, I used a randomized cv search. Next I used a grid search with cross validation for final tuning. My model was able to successfully predict a negative rating 54% of the time with only 1% of legitimate users affected with a false positive prediction. For the fraud ratings scenario described above, I was able to sample the results and determine successful classification. 
+
+<insert image of confusion matrix>
+<insert precision-recall curve>
+
+### Next Steps - Results Validation
+The model performed slightly better with the graph theory features than without with the f1_score increasing from .65 to .66. As there are relatively few frauds tied to the scenario I am trying to detect, I would like to ensure that this increase is due to them being detected. I plan to run a series of random train-test-splits to test the model with and without the graph features and then compare the results to determine if they are statistically significant, especially for the scenarios I have manually categorized as ratings manipulation fraud. 
 
