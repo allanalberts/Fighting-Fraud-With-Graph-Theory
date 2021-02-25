@@ -16,36 +16,77 @@ def graph_user_features(bitcoin_df, user, rate_date):
     """
     g = h.build_graph(bitcoin_df, rating_type='pos', rating_date=rate_date)
     if user in g: 
+        # reverse the graph so that ego graph picks up those who rated the node,
+        # then reverse it again, so that metrics are based on orginal directed structure
         ego_g = nx.ego_graph(nx.reverse_view(g), user, radius=1)
+        ego_g = nx.reverse_view(ego_g)
         if len(ego_g) > 2:
             node_census = nx.triadic_census(ego_g)
-            ego_triad_300 = node_census['300']
-            ego_triad_210 = node_census['210']
-            ego_triad_201 = node_census['201']
-            ego_triad_120 = node_census['120U'] + node_census['120D'] + node_census['120C']
-            ego_triad_all = ego_triad_300 + ego_triad_210 + ego_triad_201 + ego_triad_120
-            ego_cluster_coef = nx.clustering(ego_g, user)
-            ego_degree = nx.degree(ego_g)[user]
-            ego_betweeness = nx.betweenness_centrality(ego_g)[user]
-            ego_closeness = nx.closeness_centrality(ego_g)[user]
-            ego_g = ego_g.to_undirected()
-            ego_num_cliques = nx.number_of_cliques(ego_g, user)
-            arr = np.array([ego_triad_300,
-                            ego_triad_210,
-                            ego_triad_201,
-                            ego_triad_120,
-                            ego_triad_all,
-                            ego_cluster_coef,
-                            ego_degree,
-                            ego_betweeness,
-                            ego_closeness,
-                            ego_num_cliques])
+            # fully connected traids:
+            triad_300 = node_census['300']
+            triad_210 = node_census['210']
+            triad_120 = node_census['120U'] + node_census['120D'] + node_census['120C']
+            triad_030T = node_census['030T']
+            triad_030C = node_census['030C']
+            # reciprocal but not fully connected:
+            triad_201 = node_census['201']
+            triad_111 = node_census['111U'] +node_census['111D']
+            triad_102 = node_census['102']
+            # no reciprocal ratings:
+            triad_021 = node_census['021U'] + node_census['021D'] + node_census['021C']
+            triad_all = sum(node_census.values())
+            cluster_coef = nx.clustering(ego_g, user)
+            neighbors_in = len(list(nx.reverse(ego_g).neighbors(user)))
+            betweeness = nx.betweenness_centrality(ego_g)[user]
+            excess_ratings_in = nx.in_degree_centrality(ego_g)[user] - nx.out_degree_centrality(ego_g)[user]
+            arr = np.array([triad_300,
+                            triad_210,
+                            triad_120,
+                            triad_030T,
+                            triad_030C,
+                            triad_201,
+                            triad_111,
+                            triad_102,
+                            triad_021,
+                            triad_all,
+                            cluster_coef,
+                            neighbors_in,
+                            betweeness,
+                            excess_ratings_in])
             arr[np.isnan(arr)] = 0
             return arr  
-    return np.zeros(10)
+    return np.zeros(14)
+
+def historical_source_user_features(bitcoin_df, user, rate_date):
+    """ Returns array containing predictive features for 
+    an individual bitcoin rating based on source of rating.
+    Input: 
+        bitcoin_df:  Dataframe containing bitcoin ratings as edges
+        user: int
+        rate_date: date used for feature generation
+    Output:
+        array
+    """
+    df = bitcoin_df.copy()
+    df_user = df[(df['rater']==user) & (df['date'] < rate_date)]
+
+    num_ratings_given = len(df_user)
+    # check for no historical user data
+    if num_ratings_given ==0:
+        return np.zeros(4)
+    rating_given_avg = df_user['rating'].mean()
+    days_since_first_rating_source = (rate_date - df_user['date'].min()).days
+    days_since_last_rating_source = (rate_date - df_user.iloc[-1]['date']).days
+
+    arr = np.array([num_ratings_given, 
+                    rating_given_avg,
+                    days_since_first_rating_source,
+                    days_since_last_rating_source])
+    arr[np.isnan(arr)] = 0
+    return arr
 
 
-def historical_user_features(bitcoin_df, user, rate_date):
+def historical_target_user_features(bitcoin_df, user, rate_date):
     """ Returns array containing predictive features for 
     an individual bitcoin rating.
     Input: 
@@ -68,58 +109,20 @@ def historical_user_features(bitcoin_df, user, rate_date):
     neg_ratings_pct = np.where(num_ratings_received > 0, num_neg_received / num_ratings_received, 0)
     rating_received_sum = df_user['rating'].sum()
     rating_received_avg = df_user['rating'].mean()
-    days_since_first_rated = (rate_date - df_user['date'].min()).days
-    days_since_last_rated = (rate_date - df_user.iloc[-1]['date']).days
+    days_since_first_rating_target = (rate_date - df_user['date'].min()).days
+    days_since_last_rating_target = (rate_date - df_user.iloc[-1]['date']).days
     last_rating_neg = np.where(df_user.iloc[-1]['rating'] < 0, 1, 0)
 
-    # check for user having received a previous rating
-    # if len(target_user) <= 1:
-    #     days_since_last_rated = 0
-    #     successive_neg_rating = 0
-    # else:
-    #     days_since_last_rated = (rate_date - target_user.iloc[-2]['date']).days
-    #     successive_neg_rating = np.where(target_user.iloc[-2]['rating'] < 0, 1, 0)
-        # code for having multiple successive negative ratings:
-        # if (target_user.iloc[-2]['rating'] < 0) & (len(target_user) > 1):
-        #     successive_neg_rating = 1
-        #     if len(target_user) > 2:
-        #         if target_user.iloc[-3]['rating'] < 0:
-        #             successive_neg_rating = 2
-        #             if len(target_user) > 3:
-        #                 if target_user.iloc[-4]['rating'] < 0:
-        #                     successive_neg_rating = 3
-        # else:
-        #     successive_neg_rating = 0
     arr = np.array([num_ratings_received, 
                     num_neg_received,
                     num_pos_received,
                     neg_ratings_pct,
                     rating_received_sum,
                     rating_received_avg,
-                    days_since_first_rated,
-                    days_since_last_rated,
+                    days_since_first_rating_target,
+                    days_since_last_rating_target,
                     last_rating_neg,
                     ])
-    arr[np.isnan(arr)] = 0
-    return arr
-
-def velocity_user_features(bitcoin_df, user, rate_date, minutes):
-    """ Returns array containt the current and maximum velocity 
-    of activity per (minutes) time frame that is associated with 
-    the user
-    Input:
-        bitcoin_df: dataframe of bitcoin activity
-        user: int - from current record user
-        rate_date: date - fryom current record
-        minutes: int - the velocity time frame in minutes
-    """
-    df = bitcoin_df.copy()
-    from_date = str(pd.Timestamp(rate_date) - pd.offsets.Minute(minutes))
-    velocity_current = df[((df['rater']==user) | (df['ratee']==user)) & \
-        (df['date'] < rate_date) & (df['date'] >= from_date)]['rating'].count()
-    velocity_max = df[((df['rater']==user) | (df['ratee']==user)) & \
-        (df['date'] < rate_date)]['velocity_current'].max()
-    arr = np.array([velocity_current, velocity_max])
     arr[np.isnan(arr)] = 0
     return arr
 
@@ -128,19 +131,22 @@ def feature_creation_iteration(bitcoin_df, feature_type, feature_lst):
     every bitcoin rating.
     Input: 
         bitcoin_df:  dataframe containing bitcoin ratings as edges
-        feature_type: string (graph/velocity/historical)
+        feature_type: string (graph/velocity/historical_target/historical_source)
         feature_lst: list of feature names to create    
     """
     df = bitcoin_df.copy()
     for idx_df, row in df.iterrows():
-        user = row['ratee']
+        target = row['ratee']
+        source = row['rater']
         rate_date = row['date']
-        if feature_type == 'graph':
-            arr = graph_user_features(df, user, rate_date)
-        elif feature_type == 'velocity':
-            arr = velocity_user_features(df, user, rate_date, minutes=5)
-        elif feature_type == 'historical':
-            arr = historical_user_features(df, user, rate_date)
+        if feature_type == 'graph_target':
+            arr = graph_user_features(df, target, rate_date)
+        elif feature_type == 'graph_source':
+            arr = graph_user_features(df, source, rate_date)
+        elif feature_type == 'historical_target':
+            arr = historical_target_user_features(df, target, rate_date)
+        elif feature_type == 'historical_source':
+            arr = historical_source_user_features(df, source, rate_date)
         else:
             print("Invalid Feature Type. Use: graph/velocity/historical")
             return
@@ -148,40 +154,145 @@ def feature_creation_iteration(bitcoin_df, feature_type, feature_lst):
             df.at[(idx_df, feature)] = arr[idx_lst]
     return df
 
+def normalize_source_graph_metrics(df_g):
+    df = df_g.copy()
+    df['neighbors_in_source'] = np.where(df['neighbors_in_source']==0, 1,df['neighbors_in_source'])
+    df['210_norm_source'] = df['triad_210_source']/df['neighbors_in_source']
+    df['120_norm_source'] = df['triad_120_source']/df['neighbors_in_source']
+    df['300_norm_source'] = df['triad_300_source']/df['neighbors_in_source']
+    df['030T_norm_source'] = df['triad_030T_source']/df['neighbors_in_source']
+    df['201_norm_source'] = df['triad_201_source']/df['neighbors_in_source']
+    df['111_norm_source'] = df['triad_111_source']/df['neighbors_in_source']
+    df['102_norm_source'] = df['triad_102_source']/df['neighbors_in_source']
+    df['021_norm_source'] = df['triad_021_source']/df['neighbors_in_source']
+    df['all_norm_source'] = df['triad_all_source']/df['neighbors_in_source']
+    drop_colls = ['triad_210_source',
+                  'triad_120_source',
+                  'triad_300_source',
+                  'triad_030T_source',
+                  'triad_201_source',
+                  'triad_111_source',
+                  'triad_102_source',
+                  'triad_021_source',
+                  'triad_all_source']
+    df.drop(drop_colls, inplace=True, axis=1)    
+    return df
+    
+
+def normalize_target_graph_metrics(df_g):
+    """ Called by notebook program to normalize the graph data
+    """
+    df = df_g.copy()
+    df['neighbors_in_target'] = np.where(df['neighbors_in_target']==0, 1,df['neighbors_in_target'])
+    df['210_norm_target'] = df['triad_210_target']/df['neighbors_in_target']
+    df['120_norm_target'] = df['triad_120_target']/df['neighbors_in_target']
+    df['300_norm_target'] = df['triad_300_target']/df['neighbors_in_target']
+    df['030T_norm_target'] = df['triad_030T_target']/df['neighbors_in_target']
+    df['201_norm_target'] = df['triad_201_target']/df['neighbors_in_target']
+    df['111_norm_target'] = df['triad_111_target']/df['neighbors_in_target']
+    df['102_norm_target'] = df['triad_102_target']/df['neighbors_in_target']
+    df['021_norm_target'] = df['triad_021_target']/df['neighbors_in_target']
+    df['all_norm_target'] = df['triad_all_target']/df['neighbors_in_target']
+    drop_colls = ['triad_210_target',
+                  'triad_120_target',
+                  'triad_300_target',
+                  'triad_030T_target',
+                  'triad_201_target',
+                  'triad_111_target',
+                  'triad_102_target',
+                  'triad_021_target',
+                  'triad_all_target']
+    df.drop(drop_colls, inplace=True, axis=1)
+    return df
+
+def graph_metrics_source_target_difference(df_gg):
+    df = df_gg.copy()
+    df['neighbors_in_diff'] = df['neighbors_in_target'] - df['neighbors_in_source']
+    df['210_diff'] = df['210_norm_target'] - df['210_norm_source']
+    df['120_diff'] = df['120_norm_target'] - df['120_norm_source']
+    df['300_diff'] = df['300_norm_target'] - df['300_norm_source']
+    df['030T_diff'] = df['030T_norm_target'] - df['030T_norm_source']
+    df['201_diff'] = df['201_norm_target'] - df['201_norm_source']
+    df['111_diff'] = df['111_norm_target'] - df['111_norm_source']
+    df['102_diff'] = df['102_norm_target'] - df['102_norm_source']
+    df['021_diff'] = df['021_norm_target'] - df['021_norm_source']
+    df['triads_diff'] = df['all_norm_target'] - df['all_norm_source']
+    df['betweeness_diff'] = df['betweeness_target'] - df['betweeness_source']
+    df['excess_ratings_in_diff'] = df['excess_ratings_in_target'] - df['excess_ratings_in_source']
+    df['cluster_coef_diff'] = df['cluster_coef_target'] - df['cluster_coef_source']
+    drop_colls = ['neighbors_in_source',
+                  '210_norm_source',
+                  '120_norm_source',
+                  '300_norm_source',
+                  '030T_norm_source',
+                  '201_norm_source',
+                  '111_norm_source',
+                  '102_norm_source',
+                  '021_norm_source',
+                  'all_norm_source',
+                  'betweeness_source',
+                  'excess_ratings_in_source',
+                  'cluster_coef_source']
+    df.drop(drop_colls, inplace=True, axis=1)
+    return df
 
 if __name__ == '__main__':
 
     otc_df = h.load_bitcoin_edge_data('../data/soc-sign-bitcoinotc.csv.gz')
 
-    historical_features = [
+    historical_target_features = [
         'num_ratings_received',
         'num_neg_received',
         'num_pos_received',
         'neg_ratings_pct',
         'rating_received_sum',
         'rating_received_avg',
-        'days_since_first_rated',
-        'days_since_last_rated',
+        'days_since_first_rating_target',
+        'days_since_last_rating_target',
         'last_rating_neg']
-    df_historical_features = feature_creation_iteration(otc_df, 'historical', historical_features)
-    df_historical_features.to_csv('../data/historical_features.csv', index=False)
+    # df_historical_target_features = feature_creation_iteration(otc_df, 'historical_target', historical_target_features)
+    # df_historical_target_features.to_csv('../data/historical_target_features.csv', index=False)
 
-    velocity_features = [
-        'velocity_current',
-        'velocity_max']
-    otc_df['velocity_current'] = 0  # instantiate field for velocity_max calculation
-    df_velocity_features = feature_creation_iteration(otc_df, 'velocity', velocity_features)
-    df_velocity_features.to_csv('../data/velocity_features.csv', index=False)
+    historical_source_features = [
+        'num_ratings_given',
+        'rating_given_avg',
+        'days_since_first_rating_source',
+        'days_since_last_rating_source']
+    # df_historical_source_features = feature_creation_iteration(otc_df, 'historical_source', historical_source_features)
+    # df_historical_source_features.to_csv('../data/historical_source_features.csv', index=False)
 
-    graph_features = [
-        'ego_triad_300',
-        'ego_triad_210',
-        'ego_triad_201',
-        'ego_triad_120',
-        'ego_triad_all',
-        'ego_cluster_coef',
-        'ego_degree',
-        'ego_betweeness',
-        'ego_closeness',
-        'ego_num_cliques']
+    # Process graph data and write output to csv file
+    graph_target_features = ['triad_300_target',
+                            'triad_210_target',
+                            'triad_120_target',
+                            'triad_030T_target',
+                            'triad_030C_target',
+                            'triad_201_target',
+                            'triad_111_target',
+                            'triad_102_target',
+                            'triad_021_target',
+                            'triad_all_target',
+                            'cluster_coef_target',
+                            'neighbors_in_target',
+                            'betweeness_target',
+                            'excess_ratings_in_target']
+    df_graph_target_features = feature_creation_iteration(otc_df, 'graph_target', graph_target_features)
+    df_graph_target_features.to_csv('../data/graph_target_features.csv', index=False)
+
+    graph_source_features = ['triad_300_source',
+                            'triad_210_source',
+                            'triad_120_source',
+                            'triad_030T_source',
+                            'triad_030C_source',
+                            'triad_201_source',
+                            'triad_111_source',
+                            'triad_102_source',
+                            'triad_021_source',
+                            'triad_all_source',
+                            'cluster_coef_source',
+                            'neighbors_source',
+                            'betweeness_source',
+                            'excess_ratings_in_source']
+    df_graph_source_features = feature_creation_iteration(otc_df, 'graph_source', graph_source_features)
+    df_graph_source_features.to_csv('../data/graph_source_features.csv', index=False)
        

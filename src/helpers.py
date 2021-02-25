@@ -80,7 +80,7 @@ def build_graph(bitcoin_df, user_lst=[], rating_type='all', rating_date=''):
     """
     df = bitcoin_df.copy()
     if rating_date != '':
-        df = df[df['date'] < rating_date].sort_values('date')
+        df = df[(df['date'] < rating_date)].sort_values('date')
 
     # restrict ratings to pos or neg is specified as parameter
     if rating_type == 'pos':
@@ -91,85 +91,12 @@ def build_graph(bitcoin_df, user_lst=[], rating_type='all', rating_date=''):
     # if arguments include user list, restrict graph to just these users
     if len(user_lst) > 0:
         df = df[(df['ratee'].isin(user_lst)) | (df['rater'].isin(user_lst))]
-
         
     g = nx.from_pandas_edgelist(df, source='rater',
                                     target='ratee',
                                     edge_attr=True,
                                     create_using=nx.DiGraph())
     return g
-
-# # def user_stats(bitcoin_df, usertype="ratee"):
-# #     """ Returns Dataframe of user activity stats based on whether the user
-# #     is the rater or ratee. This dataframe is use in function
-# #     user_activity_dataframe() to generate overall user stats
-# #     Input:
-# #         Dataframe of bitcoin marketplace ratings activity
-# #     Output:
-# #         Dataframe 
-# #     """
-# #     df = bitcoin_df.copy()
-# #     if usertype == 'ratee':
-# #         ratingstype = "Received"
-# #     elif usertype == 'rater':
-# #         ratingstype = "Given"
-    
-# #     # aggregate ratee stats
-# #     users_agg = df.groupby(usertype)['rating'].agg(['count','mean', 'median', 'min','max'])
-# #     users_agg.rename_axis(index={usertype: 'user'}, inplace=True)
-# #     users_agg['count'].fillna(0, inplace=True)
-# #     users_agg.columns = ['Ratings' + ratingstype, 'AvgRating' + ratingstype, 
-# #                          'MedianRating' + ratingstype, 'MinRating' + ratingstype, 
-# #                          'MaxRating' + ratingstype]
-
-# #     # aggregate ratee dates
-# #     users_dt = df.groupby('ratee')['date'].agg(['min','max'])
-# #     users_dt.rename_axis(index={'ratee': 'user'}, inplace=True)
-# #     users_dt.columns = ['DateFirstRating' + ratingstype, 'DateLastRating' + ratingstype]
-    
-# #     # negative ratings
-# #     users_nr = df[df['rating'] < 0].groupby(usertype)['rating'].agg({'count'}).fillna(0)
-# #     users_nr.rename_axis(index={usertype: 'user'}, inplace=True)
-# #     users_nr['count'] = users_nr['count'].fillna(0)
-# #     users_nr.columns = ['Neg' + ratingstype + 'Cnt']
-    
-# #     # positive ratings
-# #     users_pr = df[df['rating'] > 0].groupby(usertype)['rating'].agg({'count'}).fillna(0)
-# #     users_pr.rename_axis(index={usertype: 'user'}, inplace=True)
-# #     users_pr['count'] = users_pr['count'].fillna(0)
-# #     users_pr.columns = ['Pos' + ratingstype + 'Cnt']
-
-# #     return pd.concat([users_agg, users_dt, users_nr, users_pr], axis=1, sort=False)
-
-# def user_activity_dataframe(bitcoin_df):
-#     """Returns dataframe of metrics related to activity of each marketplace user
-#     Input:
-#         bitcoind_df: dataframe of bitcoin marketplace data
-#     Output:
-#         Dataframe
-#     """
-#     ratee = user_stats(bitcoin_df, usertype="ratee")
-#     rater = user_stats(bitcoin_df, usertype="rater")
-#     users = pd.concat([ratee, rater], axis=1, sort=False)
-    
-#     # zero fill nan's
-#     for ratingstype in ['Received', 'Given']:
-#         cols = ['Ratings' + ratingstype, 'AvgRating' + ratingstype, 
-#                 'MedianRating' + ratingstype, 'MinRating' + ratingstype, 
-#                 'MaxRating' + ratingstype]
-#         users[cols] = users[cols].fillna(0)
-#     users[['NegReceivedCnt', 'PosReceivedCnt']] = users[['NegReceivedCnt', 'PosReceivedCnt']].fillna(0)
-
-#     # Time active 
-#     users['FirstActivity'] = users[['DateFirstRatingReceived', 'DateLastRatingReceived',
-#                                     'DateFirstRatingGiven', 'DateLastRatingGiven']].min(axis=1)
-#     users['LastActivity'] = users[['DateFirstRatingReceived', 'DateLastRatingReceived',
-#                                    'DateFirstRatingGiven', 'DateLastRatingGiven']].max(axis=1)
-#     users['TimeActive'] = users['LastActivity'] - users['FirstActivity']
-#     users['Victim'] = users['MinRatingGiven'] < 0
-#     users['Fraudster'] = users['MinRatingReceived'] < 0
-#     users['RatingsGivenRatio'] = users['RatingsGiven'] / users['RatingsReceived']
-#     return users
 
 if __name__ == '__main__':
     pass
