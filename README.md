@@ -43,7 +43,7 @@ Triads use the following nameing convention:
     
 The triads most interesting for us are the 201 and 030T structures. Prevalence of the **201 traid** is what we would normally expect to see when **legitimate users** interact and both mutually rate each other. 
 
-- insert image of example
+<img src="/images/201_example.png"  width="200" heigh="300" />
 
 The **030T structure** is often seen when fraudsters are using **fake accounts to boost ratings**. In this scenaro, they don't necessarily provide reciprocal ratings and the users that have been rated tend to rate each other in an interconnected fashion. 
 
@@ -59,25 +59,24 @@ To create fraud prediction features, I use the history of prior positive ratings
 
 ### Features for Identifying Fraud Users
 Graph Based Features:
-- degree
-- 210_triad / degrees
-- 120_triad / degrees
-- 300_triad / degrees
-- 030T_triad / degrees
-- 201_triad / degrees
-- 111_triad / degrees
-- 102_triad / degrees
-- 021_triad / degrees
+- neighbors
+- 210_triad / neighbors
+- 120_triad / neighbors
+- 300_triad / neighbors
+- 030T_triad / neighbors
+- 201_triad / neighbors
+- 111_triad / neighbors
+- 102_triad / neighbors
+- 021_triad / neighbors
 
-Non-Graph Features:
+Non-Graph Based Features :
 - days since last rated
 - days since first rated
 - average rating
+- total ratings
 
 ### Features for Differentiating Legitimate Rating Interactions
 To predict negative OTC ratings, we need to do more than just identify a user involved in ratings manipulation. We must also identify when they are being rated by one of their co-conspiritor users (positive rating) vs. a legit user who is being victimized (negative rating). I do this by measuring the difference in metric values between the rater and ratee.
-
-
 
 ### Other Features
 My model also uses 12 more traditional features associated with user activity including days since last rated, dayes since first rated, number of positive and negative ratings, sum and average of ratings received.
