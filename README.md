@@ -41,12 +41,11 @@ Triads use the following nameing convention:
     2nd digit: number of single directional connections (only one user has been rated)
     3rd digit: number of open connections (users have not interacted with each other)
     
-The triads most interesting for us are the 201 and 030T structures. Prevalence of the 201 traid is what we would normally expect to see when legitimate users interact and both mutually rate each other. 
+The triads most interesting for us are the 201 and 030T structures. Prevalence of the **201 traid** is what we would normally expect to see when **legitimate users** interact and both mutually rate each other. 
 
 - insert image of example
 
-The 030T structure is often seen when fraudsters are using fake accounts to boost their ratings. In this scenaro, they don't necessarily provide reciprocal ratings and the users that have been rated tend to rate each other in an interconnected fashion. 
-
+The **030T structure** is often seen when fraudsters are using **fake accounts to boost ratings**. In this scenaro, they don't necessarily provide reciprocal ratings and the users that have been rated tend to rate each other in an interconnected fashion. 
 
 <img src="/images/030T_example.png"  width="300" heigh="300" /> <img src="/images/example_4733.png" width="500" height="300"/>
 
@@ -83,11 +82,10 @@ To predict negative OTC ratings, we need to do more than just identify a user in
 ### Other Features
 My model also uses 12 more traditional features associated with user activity including days since last rated, dayes since first rated, number of positive and negative ratings, sum and average of ratings received.
 
-My fraud detection model utilizes these 41 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a grid of paramaeter ranges and randomly sampled from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 2.64% increase in model performance. The accuracy score of 0.9437 was extemely close to the Out Of Bag score of 0.09462 thus suggesting model validity. My model was able to successfully predict a negative rating 54% of the time with only 1% of legitimate users affected with a false positive prediction when using a 0.5 threshold value. For the fraud ratings scenario described above, I was able to sample the results and determine successful classification after the graph theory features had been added to the model. 
+### Classifier Model
+My fraud detection model utilizes these 41 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a grid of paramaeter ranges and randomly sampled from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 2.64% increase in model performance. The accuracy score of 0.9437 was extemely close to the Out Of Bag score of 0.09462 thus suggesting model validity. My model was able to successfully predict a negative rating 78% of the time with 5% of legitimate users affected with a false positive prediction when using a 0.2 threshold value. 
 
-<img src="/images/confusion_matrix.png" alt="drawing" width="500"/>
-
-<img src="/images/PR_curve.png" alt="drawing" width="500"/>
+<img src="/images/results.png" alt="drawing"/>
 
 ### Measuring Model Performance
 In the OTC marketplace, fraudsters are impatient. They rate each other over a very short period of time, possible using automation bots, and they give each other unusually high ratings. Features based on these two traits (days active and avg rating) will identify all of the fraud that is also manifested through graph theory. However, fraudsters adapt and will change their modus oprandi once their actitity is recognized. The advantage of graph theory is that it is relatively easy for fraudsters to change the length time between ratings and also the rating value given, however, it is much harder for them to manipulate the features developed through graph theory. So, while not the strongest initial fraud detection features, graph theory features will be much harder for fraudster to circumvent. 
