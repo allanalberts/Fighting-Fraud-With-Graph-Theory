@@ -28,13 +28,14 @@ Total Ratings in subset: 17,965
 ## Using Graph Theory to Detect Ratings Manipulation
 Graph theory metrics can be used to understand the interactions that a user is having with other accounts and can be used to identify patterns associated with fraudulent ratings boosting. When OTC users rate each other, a network is formed linking them together by the ratings they give each other. I display positive ratings in blue and negative ratings in red. The direction shows who is receiving the rating and width is related to the size of the rating score. 
 
-<img src="/images/example2.png" alt="drawing" width="500"/>
+<img src="/images/example2.png" alt="drawing" width="300"/>
 
 The network surrounding a fraudster who is manipulating his ratings is structured different from the activity that is generated from a normal user.Interactions between users can be quantified and then compared with normal OTC interations to identify anomalies indicative of fraudulently boosted ratings. Graph theory components for this type of analyis can be grouped into **Triads** and **Measures of Centrality**
 
 ### Traids
 In graph theory, triads are groups of 3 nodes that are interlinked in some way. Triads in our case would be users that are linked by the ratings that they give each other. In a directional graph there are 16 different possible configuratios of triads. 
-<img src="/images/triads.png" alt="drawing" width="500"/>
+
+<img src="/images/triads.png" alt="drawing" width="700"/>
 
 Triads use the following nameing convention:
     1st digit: number of bidirectional connections between nodes (users having both rated each other)
@@ -69,7 +70,8 @@ Graph Based Features:
 - 102_triad / neighbors
 - 021_triad / neighbors
 
-Non-Graph Based Features :
+My model also uses more traditional non-graph based features associated with user activity including:
+
 - days since last rated
 - days since first rated
 - average rating
@@ -77,9 +79,6 @@ Non-Graph Based Features :
 
 ### Features for Differentiating Legitimate Rating Interactions
 To predict negative OTC ratings, we need to do more than just identify a user involved in ratings manipulation. We must also identify when they are being rated by one of their co-conspiritor users (positive rating) vs. a legit user who is being victimized (negative rating). I do this by measuring the difference in metric values between the rater and ratee.
-
-### Other Features
-My model also uses 12 more traditional features associated with user activity including days since last rated, dayes since first rated, number of positive and negative ratings, sum and average of ratings received.
 
 ### Classifier Model
 My fraud detection model utilizes these 41 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a grid of paramaeter ranges and randomly sampled from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 2.64% increase in model performance. The accuracy score of 0.9437 was extemely close to the Out Of Bag score of 0.09462 thus suggesting model validity. My model was able to successfully predict a negative rating 78% of the time with 5% of legitimate users affected with a false positive prediction when using a 0.2 threshold value. 
