@@ -47,6 +47,8 @@ The triads most interesting for us are the 201 and 030T structures. Prevalence o
 
 The 030T structure is often seen when fraudsters are using fake accounts to boost their ratings. In this scenaro, they don't necessarily provide reciprocal ratings and the users that have been rated tend to rate each other in an interconnected fashion. 
 
+![](/images/030T_example.png)  |  ![](/images/example_4733.png)
+
 <img src="/images/030T_example.png"  width="400" heigh="400" /> <img src="/images/example_4733.png" width="425"/>
 
 To normalize the triad metrics for high and low volume users, I divide the number of triads by the number of neighbors (other users) associated with the account. As you can see in the example above, as the user receives additional fake ratings, their 030T metric also rises.
