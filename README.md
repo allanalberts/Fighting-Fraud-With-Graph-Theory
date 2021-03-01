@@ -56,11 +56,10 @@ To normalize the triad metrics for high and low volume users, I divide the numbe
 The **Cluster Coefficient** measures the proportion of raters that also rate each other. Fake users that rate each other will also produce a dense network which can manifest itself with a **low Betweeness value and a high Closeness value**. Betweeness represents the degree to which nodes stand between each other, so if a node acted as a bridge between communities if would have high betweeness. Closenss represents how close the node is to all of the other nodes in the network. A high value indicates that the node would appear visually towards the center of a graph. 
 
 ### Feature Creation
-To create fraud prediction features, I use the history of prior positive ratings in the marketplace and generate a Reverse Directed Ego Subgraph of the users rating connections. An Ego Subgraph is a subnetwork that is centered around the user. I use a reverse directed graph with a radius of 1 so that I pick up the users that have rated the user in question. The ego network will also pick up interactions between any of the nodes in the subgraph. 
+To create fraud prediction features, I use the history of prior positive ratings in the marketplace and generate a Reverse Directed Ego Subgraph of the users rating connections. An Ego Subgraph is a subnetwork that is centered around the user. I use a reverse directed graph with a radius of 1 so that I pick up the users that have rated the user in question. The ego network will also pick up interactions between any of the nodes in the subgraph. Feature sets are generated for both the rater and ratee of each rating.
 
-### Features for Identifying Fraud Users
-Graph Based Features:
-- neighbors
+### Graph Based Features:
+- number of neighbors
 - 210_triad / neighbors
 - 120_triad / neighbors
 - 300_triad / neighbors
@@ -69,9 +68,12 @@ Graph Based Features:
 - 111_triad / neighbors
 - 102_triad / neighbors
 - 021_triad / neighbors
+- betweeness
+- closeness
+- cluster coefficient
 
-My model also uses more traditional non-graph based features associated with user activity including:
-
+### Non Graph Based Features:
+In the OTC marketplace, fraudsters are impatient. They rate each other over a very short period of time, possible using automation bots, and they give each other unusually high ratings. Features based on these two traits (days active and avg rating) are included in my model:
 - days since last rated
 - days since first rated
 - average rating
@@ -81,9 +83,9 @@ My model also uses more traditional non-graph based features associated with use
 To predict negative OTC ratings, we need to do more than just identify a user involved in ratings manipulation. We must also identify when they are being rated by one of their co-conspiritor users (positive rating) vs. a legit user who is being victimized (negative rating). I do this by measuring the difference in metric values between the rater and ratee.
 
 ### Classifier Model
-My fraud detection model utilizes these 41 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a grid of paramaeter ranges and randomly sampled from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 2.64% increase in model performance. The accuracy score of 0.9437 was extemely close to the Out Of Bag score of 0.09462 thus suggesting model validity. My model was able to successfully predict a negative rating 78% of the time with 5% of legitimate users affected with a false positive prediction when using a 0.2 threshold value. 
+My fraud detection model utilizes these 41 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a grid of paramaeter ranges and randomly sampled from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 29% increase in model performance. The accuracy score of 0.9880 was extemely close to the Out Of Bag score of 0.09877 thus suggesting model validity. My model was able to successfully predict a negative rating 49% of the time with 2% of legitimate users affected with a false positive prediction when using a 0.1 threshold value. 
 
 <img src="/images/results.png" alt="drawing"/>
 
 ### Measuring Model Performance
-In the OTC marketplace, fraudsters are impatient. They rate each other over a very short period of time, possible using automation bots, and they give each other unusually high ratings. Features based on these two traits (days active and avg rating) will identify all of the fraud that is also manifested through graph theory. However, fraudsters adapt and will change their modus oprandi once their actitity is recognized. The advantage of graph theory is that it is relatively easy for fraudsters to change the length time between ratings and also the rating value given, however, it is much harder for them to manipulate the features developed through graph theory. So, while not the strongest initial fraud detection features, graph theory features will be much harder for fraudster to circumvent. 
+The model predicted 36% of the fraud using only graph theory features. When additional features based on timing and level of rating where added, the performance increased to 49%. However, fraudsters adapt and will change their modus oprandi once their actitity is recognized. The advantage of graph theory is that it is relatively easy for fraudsters to change the length time between ratings and also the rating value given, however, it is much harder for them to manipulate the features developed through graph theory and circumvent detection.  
