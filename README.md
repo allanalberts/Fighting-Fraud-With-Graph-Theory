@@ -30,10 +30,10 @@ Graph theory metrics can be used to understand the interactions that a user is h
 
 <img src="/images/example2.png" alt="drawing" width="300"/>
 
-The network surrounding a fraudster who is manipulating his ratings is structured different from the activity that is generated from a normal user.Interactions between users can be quantified and then compared with normal OTC interations to identify anomalies indicative of fraudulently boosted ratings. Graph theory components for this type of analyis can be grouped into **Triads** and **Measures of Centrality**
+The network surrounding a fraudster who is manipulating his ratings is structured different from the activity that is generated from a normal user. Interactions between users can be quantified and then compared with normal OTC interations to identify anomalies indicative of fraudulently boosted ratings. Graph theory components for this type of analyis can be grouped into **Triads** and **Measures of Centrality**
 
 ### Traids
-In graph theory, triads are groups of 3 nodes that are interlinked in some way. Triads in our case would be users that are linked by the ratings that they give each other. In a directional graph there are 16 different possible configuratios of triads. 
+In graph theory, triads are groups of 3 nodes that are interlinked in some way. Triads in our case would be users that are linked by the ratings that they give each other. In a directional graph there are 16 different possible configurations of triads. 
 
 <img src="/images/triads.png" alt="drawing" width="700"/>
 
@@ -56,7 +56,7 @@ To normalize the triad metrics for high and low volume users, I divide the numbe
 The **Cluster Coefficient** measures the proportion of raters that also rate each other. Fake users that rate each other will also produce a dense network which can manifest itself with a **low Betweeness value and a high Closeness value**. Betweeness represents the degree to which nodes stand between each other, so if a node acted as a bridge between communities if would have high betweeness. Closenss represents how close the node is to all of the other nodes in the network. A high value indicates that the node would appear visually towards the center of a graph. 
 
 ### Feature Creation
-To create fraud prediction features, I use the history of prior positive ratings in the marketplace and generate a Reverse Directed Ego Subgraph of the users rating connections. An Ego Subgraph is a subnetwork that is centered around the user. I use a reverse directed graph with a radius of 1 so that I pick up the users that have rated the user in question. The ego network will also pick up interactions between any of the nodes in the subgraph. Feature sets are generated for both the rater and ratee of each rating.
+To create fraud prediction features, I use the **NetworkX** machine learning library of functions along with the history of prior positive ratings in the marketplace to generate a **Reverse Directed Ego Subgraph** of each users rating connections. An Ego Subgraph is a subnetwork that is centered around the user. I use a reverse directed graph with a radius of 1 so that I pick up the users that have rated the user in question. The ego network will also pick up interactions between any of the nodes in the subgraph. Feature sets are generated for both the rater and ratee of each rating.
 
 ### Graph Based Features:
 - number of neighbors
@@ -83,7 +83,7 @@ In the OTC marketplace, fraudsters are impatient. They rate each other over a ve
 To predict negative OTC ratings, we need to do more than just identify a user involved in ratings manipulation. We must also identify when they are being rated by one of their co-conspiritor users (positive rating) vs. a legit user who is being victimized (negative rating). I do this by measuring the difference in metric values between the rater and ratee.
 
 ### Classifier Model
-My fraud detection model utilizes these 41 features with a Random Forest Classifier. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a grid of paramaeter ranges and randomly sampled from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 29% increase in model performance. The accuracy score of 0.9880 was extemely close to the Out Of Bag score of 0.09877 thus suggesting model validity. My model was able to successfully predict a negative rating 49% of the time with 2% of legitimate users affected with a false positive prediction when using a 0.1 threshold value. 
+My fraud detection model utilizes 41 features with a **Random Forest Classifier**. I trained the model on 80 percent of the marketplace ratings using a stratified and shuffled sample and tested performance against the remaining 20% of ratings. I used scikit-learn's RandomizedSearchCV method to define a grid of parameter ranges and randomly sampled from the grid performing 3-fold cross validation. Next I used a grid search with cross validation for final tuning. Tuning resulted in a 29% increase in model performance. The accuracy score of 0.9880 was extemely close to the Out Of Bag score of 0.09877 thus suggesting model validity. My model was able to successfully predict a negative rating 49% of the time with 2% of legitimate users affected with a false positive prediction when using a 0.1 threshold value. 
 
 <img src="/images/results.png" alt="drawing"/>
 
